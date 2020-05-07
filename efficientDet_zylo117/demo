@@ -9,22 +9,26 @@ import numpy as np
 from efficientdet.utils import BBoxTransform, ClipBoxes
 from utils.utils import preprocess, invert_affine, postprocess
 
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+
 compound_coef = 2
 output_dir=''
 force_input_size = None  # set None to use default size
 img_path = 'datasets/shape/val/999.jpg'
-img_path = 'datasets/invoices/train/345.jpg'
+#img_path = 'datasets/invoices/train/345.jpg'
+pretrained = 'logs/shape/efficientdet-d2_13_784.pth'
+obj_list = ['rectangle', 'circle']
+#obj_list = ['address','amount_in_words','buyer','company_name','date','exchange_rate','form','grand_total','no','serial','tax_code','total']
 
 threshold = 0.1
-iou_threshold = 0.5
+iou_threshold = 0.2
 
 use_cuda = True
 use_float16 = False
 cudnn.fastest = True
 cudnn.benchmark = True
 
-obj_list = ['rectangle', 'circle']
-obj_list = ['address','amount_in_words','buyer','company_name','date','exchange_rate','form','grand_total','no','serial','tax_code','total']
 
 # tf bilinear interpolation is different from any other's, just make do
 input_sizes = [512, 640, 768, 896, 1024, 1280, 1280, 1536]
@@ -44,7 +48,7 @@ model = EfficientDetBackbone(compound_coef=compound_coef, num_classes=len(obj_li
                              ratios=[(1.0, 1.0), (1.4, 0.7), (0.7, 1.4)],
                              scales=[2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)])
 
-model.load_state_dict(torch.load('logs/invoices/efficientdet-d2_48_1029.pth'))
+model.load_state_dict(torch.load(pretrained))
 model.requires_grad_(False)
 model.eval()
 
@@ -85,7 +89,7 @@ for i in range(len(ori_imgs)):
                     (255, 0, 0), 2)
 
         plt.imshow(ori_imgs[i])
-        save_img_path = os.path.join(output_dir, img_path.split('/')[-1].split('.')[0] + str(j)+ '_visualized.jpg')
-        print('Save image to', save_img_path)
-        fig.savefig(save_img_path, bbox_inches='tight')
+    save_img_path = os.path.join(output_dir, img_path.split('/')[-1].split('.')[0] + '_visualized.jpg')
+    print('Save image to', save_img_path)
+    fig.savefig(save_img_path, bbox_inches='tight')
         #plt.show()

@@ -22,6 +22,10 @@ from efficientdet.loss import FocalLoss
 from utils.utils import replace_w_sync_bn, CustomDataParallel, get_last_weights, init_weights
 
 
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+debug_=False
+
 class Params:
     def __init__(self, project_file):
         self.params = yaml.safe_load(open(project_file).read())
@@ -57,7 +61,7 @@ def get_args():
     parser.add_argument('--load_weights', type=str, default=None,
                         help='whether to load weights from a checkpoint, set None to initialize, set \'last\' to load last checkpoint')
     parser.add_argument('--saved_path', type=str, default='logs/')
-    parser.add_argument('--debug', type=bool, default=False, help='whether visualize the predicted boxes of trainging, '
+    parser.add_argument('--debug', type=bool, default=debug_, help='whether visualize the predicted boxes of trainging, '
                                                                   'the output images will be in test/')
 
     args = parser.parse_args()
@@ -87,6 +91,7 @@ def train(opt):
     if params.num_gpus == 0:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
+    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     if torch.cuda.is_available():
         torch.cuda.manual_seed(42)
     else:
