@@ -1,0 +1,110 @@
+class: experiment.Experiment
+evaluation: null
+logger:
+  class: concern.log.Logger
+  database_dir: ./outputs/
+  level: info
+  log_dir: workspace/outputs/train_2020-04-28_22-54
+  log_interval: 100
+  verbose: false
+structure:
+  builder:
+    class: structure.builder.Builder
+    model: SegDetectorModel
+    model_args:
+      backbone: resnet18
+      decoder: SegDetector
+      decoder_args:
+        adaptive: true
+        in_channels:
+        - 64
+        - 128
+        - 256
+        - 512
+        k: 50
+      loss_class: L1BalanceCELoss
+  class: experiment.Structure
+  measurer:
+    class: structure.measurers.quad_measurer.QuadMeasurer
+  representer:
+    box_thresh: 0.7
+    class: structure.representers.seg_detector_representer.SegDetectorRepresenter
+    dest: binary
+    max_candidates: 1000
+    thresh: 0.3
+  visualizer:
+    class: structure.visualizers.seg_detector_visualizer.SegDetectorVisualizer
+    eager_show: false
+    vis_num: 4
+train:
+  checkpoint:
+    class: training.checkpoint.Checkpoint
+    resume: null
+    start_epoch: 0
+    start_iter: 0
+  class: experiment.TrainSettings
+  data_loader:
+    batch_size: 16
+    class: data.data_loader.DataLoader
+    collect_fn: <function default_collate at 0x7fd7a07a1510>
+    dataset:
+      class: data.image_dataset.ImageDataset
+      data_dir:
+      - datasets/invoices_28April
+      data_list:
+      - datasets/invoices_28April/train_list.txt
+      processes:
+      - augmenter_args:
+        - cls: Affine
+          rotate:
+          - -1
+          - 1
+        class: data.processes.augment_data.AugmentDetectionData
+      - class: data.processes.random_crop_data.RandomCropData
+        max_tries: 10
+        min_crop_side_ratio: 0.1
+        require_original_image: false
+        size:
+        - 640
+        - 640
+      - class: data.processes.make_icdar_data.MakeICDARData
+        shrink_ratio: 0.4
+      - class: data.processes.make_seg_detection_data.MakeSegDetectionData
+        min_text_size: 8
+        shrink_ratio: 0.4
+      - class: data.make_border_map.MakeBorderMap
+        shrink_ratio: 0.4
+        thresh_max: 0.7
+        thresh_min: 0.3
+      - class: data.processes.normalize_image.NormalizeImage
+      - class: data.processes.filter_keys.FilterKeys
+        required: []
+        superfluous:
+        - polygons
+        - filename
+        - shape
+        - ignore_tags
+        - is_training
+    drop_last: true
+    is_train: true
+    num_workers: 8
+    shuffle: true
+  epochs: 1200
+  model_saver:
+    class: training.model_saver.ModelSaver
+    dir_path: workspace/outputs/train_2020-04-28_22-54/model
+    save_interval: 3000
+    signal_path: save
+  scheduler:
+    class: training.optimizer_scheduler.OptimizerScheduler
+    learning_rate:
+      class: training.learning_rate.DecayLearningRate
+      epochs: 1200
+      factor: 0.9
+      lr: 0.007
+    optimizer: SGD
+    optimizer_args:
+      lr: 0.007
+      momentum: 0.9
+      weight_decay: 0.0001
+validation: null

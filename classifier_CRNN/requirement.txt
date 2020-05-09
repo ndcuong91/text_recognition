@@ -1,6 +1,0 @@
-python-Levenshtein
-google-cloud-vision
-pytesseract
-torchsummary
-pillow==6.1
-pandas

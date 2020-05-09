@@ -1,7 +1,7 @@
 workspace/
-demo_results/
-warp-ctc/
-coco/
+detector/warp-ctc/
+data_processing/coco/
+datasets/
 
 #CRAFT-pytorch
 *.pyc

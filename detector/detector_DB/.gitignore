@@ -1,0 +1,6 @@
+demo_results/
+models/
+build/
+datasets/
+outputs/workspace
+*.pyc

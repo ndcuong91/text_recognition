@@ -1,0 +1,13 @@
+form
+serial
+no
+date
+tax_code
+address
+buyer
+company_name
+exchange_rate
+total
+grand_total
+amount_in_words
+text

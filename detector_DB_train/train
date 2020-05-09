@@ -1,2 +1,0 @@
-python train.py --resume=None
-python train.py
