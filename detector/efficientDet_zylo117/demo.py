@@ -9,26 +9,27 @@ import numpy as np
 from efficientdet.utils import BBoxTransform, ClipBoxes
 from utils.utils import preprocess, invert_affine, postprocess
 
-
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 compound_coef = 2
-output_dir=''
+output_dir = ''
+proj = 'invoices_3keys_crop'
 force_input_size = None  # set None to use default size
-img_path = 'datasets/invoices/val/346.jpg'
-#obj_list = ['rectangle', 'circle']
-#img_path = 'datasets/invoices/train/345.jpg'
-pretrained = 'logs/invoices/efficientdet-d2_298_0.9687.pth'
-obj_list = ['address','amount_in_words','buyer','company_name','date','exchange_rate','form','grand_total','no','serial','tax_code','total']
+img_path = 'datasets/' + proj + '/train/230.jpg'
+# obj_list = ['rectangle', 'circle']
+# img_path = 'datasets/invoices/train/345.jpg'
+pretrained = 'logs/train_invoices_3keys_crop_2020-05-10_08-43/efficientdet-d2_81_0.524.pth'
+obj_list = ['address', 'amount_in_words', 'buyer', 'company_name', 'date', 'exchange_rate', 'form', 'grand_total', 'no',
+            'serial', 'tax_code', 'total']
+obj_list = ['form','serial', 'tax_code']
 
-threshold = 0.05
-iou_threshold = 0.2
+threshold = 0.1
+iou_threshold = 0.1
 
 use_cuda = True
 use_float16 = False
 cudnn.fastest = True
 cudnn.benchmark = True
-
 
 # tf bilinear interpolation is different from any other's, just make do
 input_sizes = [512, 640, 768, 896, 1024, 1280, 1280, 1536]
@@ -70,7 +71,7 @@ with torch.no_grad():
 
 out = invert_affine(framed_metas, out)
 
-inch=40
+inch = 40
 fig, ax = plt.subplots(1)
 fig.set_size_inches(inch, inch)
 
@@ -92,5 +93,5 @@ for i in range(len(ori_imgs)):
     save_img_path = os.path.join(output_dir, img_path.split('/')[-1].split('.')[0] + '_visualized.jpg')
     print('Save image to', save_img_path)
     fig.savefig(save_img_path, bbox_inches='tight')
-        #plt.show()
+    # plt.show()
 print('Done')

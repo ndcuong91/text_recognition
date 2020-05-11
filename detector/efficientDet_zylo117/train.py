@@ -17,20 +17,24 @@ from backbone import EfficientDetBackbone
 from tensorboardX import SummaryWriter
 import numpy as np
 from tqdm.autonotebook import tqdm
+from datetime import datetime
 
 from efficientdet.loss import FocalLoss
 from utils.utils import replace_w_sync_bn, CustomDataParallel, get_last_weights, init_weights
 
+
+training_time = datetime.today().strftime('%Y-%m-%d_%H-%M')
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 debug = False
 coef = 2
-proj = 'invoices'
+proj = 'invoices_3keys_crop'
 head_only = False
-base_lr = 1e-4
+base_lr = 1e-5
 batch_size = 4
-pretrained = 'weights/efficientdet-d'+str(coef)+'.pth'
+#pretrained = 'weights/efficientdet-d'+str(coef)+'.pth'
 #pretrained = None
-num_epochs = 300
+pretrained = 'logs/train_invoices_3keys_crop_2020-05-10_08-43/efficientdet-d2_81_0.524.pth'
+num_epochs = 1000
 
 
 class Params:
@@ -104,8 +108,8 @@ def train(opt):
     else:
         torch.manual_seed(42)
 
-    opt.saved_path = opt.saved_path + f'/{params.project_name}/'
-    opt.log_path = opt.log_path + f'/{params.project_name}/tensorboard/'
+    opt.saved_path = os.path.join(opt.saved_path, 'train_' +str(params.project_name)+'_'+training_time)
+    opt.log_path = os.path.join(opt.saved_path,'tensorboard')
     os.makedirs(opt.log_path, exist_ok=True)
     os.makedirs(opt.saved_path, exist_ok=True)
 
@@ -182,7 +186,7 @@ def train(opt):
     if params.num_gpus > 1 and opt.batch_size // params.num_gpus < 4:
         model.apply(replace_w_sync_bn)
 
-    writer = SummaryWriter(opt.log_path + f'/{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}/')
+    writer = SummaryWriter(opt.log_path)
 
     # warp the model with loss function, to reduce the memory usage on gpu0 and speedup
     model = ModelWithLoss(model, debug=opt.debug)
@@ -245,10 +249,10 @@ def train(opt):
                     epoch_loss.append(float(loss))
 
                     progress_bar.set_description(
-                        'Step: {}. Epoch: {}/{}. Iteration: {}/{}. Cls loss: {:.5f}. Reg loss: {:.5f}. Total loss: {:.5f}'.format(
-                            step, epoch, opt.num_epochs, iter + 1, num_iter_per_epoch, cls_loss.item(),
+                        'Epoch: {}/{}. Iter: {}/{}. Cls loss: {:.5f}. Reg loss: {:.5f}. Total loss: {:.5f}'.format(
+                            epoch, opt.num_epochs, iter + 1, num_iter_per_epoch, cls_loss.item(),
                             reg_loss.item(), loss.item()))
-                    writer.add_scalars('Loss', {'train': loss}, step)
+                    writer.add_scalars('Total_loss', {'train': loss}, step)
                     writer.add_scalars('Regression_loss', {'train': reg_loss}, step)
                     writer.add_scalars('Classfication_loss', {'train': cls_loss}, step)
 
@@ -297,7 +301,7 @@ def train(opt):
                 loss = cls_loss + reg_loss
 
                 print(
-                    'Val. Epoch: {}/{}. Classification loss: {:1.5f}. Regression loss: {:1.5f}. Total loss: {:1.5f}'.format(
+                    'Epoch: {}/{}.         Val. Cls loss: {:1.5f}. Reg loss: {:1.5f}. Total loss: {:1.5f}\n'.format(
                         epoch, opt.num_epochs, cls_loss, reg_loss, loss))
                 writer.add_scalars('Total_loss', {'val': loss}, step)
                 writer.add_scalars('Regression_loss', {'val': reg_loss}, step)

@@ -10,13 +10,12 @@ define:
   - name: train_data
     class: ImageDataset
     data_dir:
-        - 'datasets/invoices_28April/'
+        - '/home/duycuong/PycharmProjects/research_py3/text_recognition/datasets/detector/invoices_7May/keyDetector_3keys_icdar/'
     data_list:
-        - 'datasets/invoices_28April/train_list.txt'
+        - '/home/duycuong/PycharmProjects/research_py3/text_recognition/datasets/detector/invoices_7May/keyDetector_3keys_icdar/train_list.txt'
     processes:
       - class: AugmentDetectionData
         augmenter_args:
-          - ['Fliplr', 0.5]
           - {'cls': 'Affine', 'rotate': [-1, 1]}
           - ['Resize', [0.5, 3.0]]
         only_resize: False
@@ -34,9 +33,9 @@ define:
   - name: validate_data
     class: ImageDataset
     data_dir:
-        - 'datasets/invoices_28April/'
+        - '/home/duycuong/PycharmProjects/research_py3/text_recognition/datasets/detector/invoices_7May/keyDetector_3keys_icdar/'
     data_list:
-        - 'datasets/invoices_28April/test_list.txt'
+        - '/home/duycuong/PycharmProjects/research_py3/text_recognition/datasets/detector/invoices_7May/keyDetector_3keys_icdar/test_list.txt'
     processes:
         - class: AugmentDetectionData
           augmenter_args:

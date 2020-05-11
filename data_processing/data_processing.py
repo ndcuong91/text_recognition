@@ -497,7 +497,6 @@ if __name__== "__main__":
     #gen_random_symbol_corpus()
     #combine_corpus("/data/CuongND/aicr_vn/textimg_data_generator_dev/corpus")
     #os.rename(src_dir+'\nbackground',src_dir+'background')
-    transform_image_from_dir()
     #test_background_subtract()
     src='C:/Users/nd.cuong1/PycharmProjects/aicr_vn/textimg_data_generator_dev_vn/data/bg_images2_ori_3'
     dst='C:/Users/nd.cuong1/PycharmProjects/aicr_vn/textimg_data_generator_dev_vn/data/bg_img_jpg'

@@ -1,1 +1,0 @@
-python3 demo.py --weight weights/checkpoint_VOC_efficientdet-d0_268.pth --threshold 0.6 --iou_threshold 0.5 --cam --score

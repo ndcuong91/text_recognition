@@ -9,17 +9,17 @@ from structure.model import SegDetectorModel
 from structure.representers.seg_detector_representer import SegDetectorRepresenter
 from structure.visualizers.seg_detector_visualizer import SegDetectorVisualizer
 
-img_path = '../detector_DB_train/datasets/invoices_28April/test_images/36_e.jpg'
-detector_model = 'model_epoch_857_minibatch_18000'
-ckpt_path = '../detector_DB_train/outputs/workspace/detector_DB_train/outputs/train_2020-05-03_22-55/model/' + detector_model
+img_path = '../../datasets/detector/invoices_7May/imgs_crop/val/350.jpg'
+detector_model = 'model_epoch_428_minibatch_9000'
+ckpt_path = '../detector_DB_train/outputs/workspace/detector_DB_train/outputs/train_2020-05-10_22-50/model/' + detector_model
 # detector_model = 'pre-trained-model-synthtext-resnet18'
 # ckpt_path = '/home/aicr/cuongnd/aicr.core/detector_DB_train/pretrained/' + detector_model
 
 polygon = False
 visualize = True
-img_short_side = 800  # 736 960
-detector_box_thres = 0.3
-gpu_test = 0
+img_short_side = 960  # 736 960
+detector_box_thres = 0.01
+gpu_test = -1
 os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_test)
 
 

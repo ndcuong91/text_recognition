@@ -1,5 +1,5 @@
 import os, shutil, random
-import pathlib
+import pathlib, cv2
 
 
 def get_list_file_in_folder(dir, ext=['jpg', 'png', 'JPG', 'PNG']):
@@ -63,7 +63,7 @@ def prepare_train_DB_from_data_generator(data_dir, train_ratio=0.95):
     print('Total word:', count)
 
 
-def convertVOCtoDB(text_dirs, outp):
+def convert_yolo_to_icdar(text_dirs, outp):
     '''
     :param text_dirs: list of VOC label file directories
     :param outp: output directory will be contained DB label
@@ -92,6 +92,8 @@ def convertVOCtoDB(text_dirs, outp):
                 box = box.replace('\n', '')
                 box = box.split()
                 label, x, y, w, h = box
+                if label == 'label':
+                    print(filename)
                 # print(label, x, y, w, h)
                 x1 = str(int(x) + int(w))
                 y1 = str(int(y) + int(h))
@@ -105,9 +107,137 @@ def convertVOCtoDB(text_dirs, outp):
     # print(text_pathes)
 
 
-def convert_ICDAR_to_VOC(text_dirs, outp):
+def modify_yolo(text_dirs, outp):
     '''
     :param text_dirs: list of VOC label file directories
+    :param outp: output directory will be contained DB label
+    :return: None
+    '''
+    if not os.path.exists(outp):
+        os.makedirs(outp)
+    text_pathes = []
+    for source_path in text_dirs:
+        for filepath in pathlib.Path(source_path).glob('**/*'):
+            filename, file_extension = os.path.splitext(str(filepath))
+            if os.path.isfile(str(filepath)) and file_extension.lower() in ['.txt']:
+                text_pathes.append(str(filepath))
+    # for file in filelist:
+    text_pathes = sorted(text_pathes)
+
+    min_x = 1
+    max_x = 0
+    min_y = 1
+    max_y = 0
+
+    for filepath in text_pathes:
+        filename, file_extension = os.path.splitext(str(filepath))
+        filename = filename.split("/")[-1]
+        if filename != 'classes':
+            print(filename)
+            img = cv2.imread(filepath.replace('.txt', '.jpg'))
+            img_w = img.shape[1]
+            img_h = img.shape[0]
+
+            with open(filepath, 'r', encoding='utf-8') as f:
+                objBoxes = f.readlines()
+            # print(objBoxes)
+            dbObjBoxes = []
+            for box in objBoxes:
+                box = box.replace('\n', '')
+                box = box.split()
+                label, x, y, w, h = box
+                x=int(x)
+                y=int(y)
+                w=int(w)
+                h=int(h)
+                if label not in ['form', 'serial', 'tax_code']:
+                    continue
+
+                min_x_ratio = x / img_w
+                max_x_ratio = (x + w) / img_w
+                min_y_ratio = y / img_h
+                max_y_ratio = (y + h) / img_h
+                print(min_x_ratio, max_x_ratio, min_y_ratio, max_y_ratio)
+
+                if min_x_ratio<min_x:
+                    min_x=min_x_ratio
+                if min_y_ratio<min_y:
+                    min_y=min_y_ratio
+                if max_x_ratio>max_x:
+                    max_x=max_x_ratio
+                if max_y_ratio>max_y:
+                    max_y=max_y_ratio
+
+                #newBox = ' '.join([label, x, y, w, h])
+                #dbObjBoxes.append(newBox)
+                # db box: x0,y0,x1,y0,x1,y1,x0,y1,label
+            #str_newboxes = '\n'.join(dbObjBoxes)
+            # with open(os.path.join(outp, filename + file_extension), 'w', encoding='utf-8') as f:
+            #     f.write(str_newboxes)
+
+    print('min_x',round(min_x,4),'min_y',round(min_y,4),'max_x',round(max_x,4),'max_y',round(max_y,4))
+
+
+def crop_yolo_datasets(text_dirs, outp, min_x=0.01,min_y=0.005,max_x=0.95,max_y=0.55):
+    '''
+    :param text_dirs: list of VOC label file directories
+    :param outp: output directory will be contained DB label
+    :return: None
+    '''
+    if not os.path.exists(outp):
+        os.makedirs(outp)
+    text_pathes = []
+    for source_path in text_dirs:
+        for filepath in pathlib.Path(source_path).glob('**/*'):
+            filename, file_extension = os.path.splitext(str(filepath))
+            if os.path.isfile(str(filepath)) and file_extension.lower() in ['.txt']:
+                text_pathes.append(str(filepath))
+    # for file in filelist:
+    text_pathes = sorted(text_pathes)
+
+    for filepath in text_pathes:
+        filename, file_extension = os.path.splitext(str(filepath))
+        filename = filename.split("/")[-1]
+        if filename != 'classes':
+            print(filename)
+            img = cv2.imread(filepath.replace('.txt', '.jpg'))
+            img_w = img.shape[1]
+            img_h = img.shape[0]
+
+            begin_x=int(img_w*min_x)
+            end_x=int(img_w*max_x)
+            begin_y=int(img_h*min_y)
+            end_y=int(img_h*max_y)
+
+            crop_img=img[begin_y:end_y,begin_x:end_x]
+            cv2.imwrite(os.path.join(outp, filename +'.jpg'),crop_img)
+
+            with open(filepath, 'r', encoding='utf-8') as f:
+                objBoxes = f.readlines()
+            # print(objBoxes)
+            dbObjBoxes = []
+            for box in objBoxes:
+                box = box.replace('\n', '')
+                box = box.split()
+                label, x, y, w, h = box
+                new_x=int(x)-begin_x
+                new_y=int(y)-begin_y
+
+                if label not in ['form', 'serial', 'tax_code']:
+                    continue
+
+
+                newBox = ' '.join([label, str(new_x), str(new_y), w, h])
+                dbObjBoxes.append(newBox)
+            str_newboxes = '\n'.join(dbObjBoxes)
+            with open(os.path.join(outp, filename + file_extension), 'w', encoding='utf-8') as f:
+                f.write(str_newboxes)
+            kk=1
+
+
+def convert_icdar_to_yolo(text_dirs, outp):
+    '''
+    :param text_dirs: list of icdar label file directories
     :param outp: output directory will be contained DB label
     :return: None
     '''
@@ -125,7 +255,7 @@ def convert_ICDAR_to_VOC(text_dirs, outp):
         filename, file_extension = os.path.splitext(str(filepath))
         filename = filename.split("/")[-1]
         print(filename)
-        if filename != 'class':
+        if filename != 'classes':
             with open(filepath, 'r', encoding='utf-8') as f:
                 objBoxes = f.readlines()
             # print(objBoxes)
@@ -149,10 +279,45 @@ def convert_ICDAR_to_VOC(text_dirs, outp):
     # print(text_pathes)
 
 
+def convert_images_to_jpg(src_dir, dst_dir):
+    from PIL import Image
+
+    list_files = get_list_file_in_folder(src_dir)
+    for file in list_files:
+        if not file.endswith('jpg'):
+            print(file)
+            img = Image.open(os.path.join(src_dir, file))
+            img.save(os.path.join(src_dir, file.split('.')[0] + '.jpg'))
+            shutil.move(os.path.join(src_dir, file), os.path.join(dst_dir, file))
+            kk = 1
+
+def create_txt():
+    file_name='test_list.txt'
+    from_num=346
+    to_num=365
+    final=''
+    for i in range(from_num,to_num,1):
+        line=str(i)+'.jpg\n'
+        final+=line
+    with open(file_name, 'w', encoding='utf-8') as f:
+        f.write(final)
+    print('Done')
+
+
 if __name__ == "__main__":
     # rename_files('/home/aicr/cuongnd/aicr.core/detector_DB_train/datasets/invoices_28April/train_gts')
-    data_dir = '/home/aicr/cuongnd/aicr.core/detector_DB_train/datasets/invoices_28April'
+    data_dir = '/home/duycuong/PycharmProjects/research_py3/text_recognition/datasets/detector/invoices_7May/DB_icdar_format/train_images'
+    data_dir_dst = '/home/duycuong/PycharmProjects/research_py3/text_recognition/datasets/detector/invoices_7May/DB_icdar_format/png'
     # prepare_train_DB_from_data_generator(data_dir)
 
-    convert_ICDAR_to_VOC(['D:/invoices_28April/train_gts'], 'D:/invoices_28April/train_gts')
-    # convertVOCtoDB(['/data/data_label/data_final'],'/data/data_label/data_anno_DB')
+    # convert_icdar_to_yolo(['D:/invoices_28April/train_gts'], 'D:/invoices_28April/train_gts')
+    src_dir = [
+        '/home/duycuong/PycharmProjects/research_py3/text_recognition/datasets/detector/invoices_7May/keyDetector_3keys_yolo/train']
+    dst_dir = '/home/duycuong/PycharmProjects/research_py3/text_recognition/datasets/detector/invoices_7May/keyDetector_3keys_crop_yolo/train'
+    # convert_yolo_to_icdar(src_dir,src_dir[0])
+    # convert_yolo_to_icdar(src_dir, dst_dir)
+    # crop_yolo_datasets(src_dir, dst_dir)
+    #modify_yolo(src_dir, dst_dir)
+
+    # convert_images_to_jpg(data_dir,data_dir_dst)
+    create_txt()
