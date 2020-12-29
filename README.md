@@ -1,5 +1,6 @@
 # text_recognition
 text detector, text classifier ... collection. Just for research only
+
 **Let check my [viText](https://github.com/ndcuong91/viText) to work more with Vietnamese text recognition!**
 # Datasets
 **SynthText** is a synthetically generated dataset and usually
